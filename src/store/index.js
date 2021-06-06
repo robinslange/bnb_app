@@ -12,6 +12,8 @@ Vue.use(Vuex);
 
 export default new Vuex.Store({
   state: {
+    registerDialog: false,
+    admin: false,
     loggedIn: false,
     username: "admin",
     password: "12345",
@@ -19,6 +21,7 @@ export default new Vuex.Store({
     rooms: [],
     available: [],
     reviews: [],
+    user: [],
   },
   getters: {
     user: (state) => {
@@ -60,8 +63,14 @@ export default new Vuex.Store({
     setAvailable(state, data) {
       state.availabe = data;
     },
+    setUser(state, user) {
+      state.user = user;
+    },
     login(state) {
       state.loggedIn = true;
+    },
+    admin(state) {
+      state.admin = true;
     },
   },
   actions: {
@@ -69,6 +78,22 @@ export default new Vuex.Store({
       api.delete("/bookings/" + item.id).then((res) => {
         if (res.status === 200) {
           commit("removeBooking", item);
+        }
+      });
+    },
+    getUserBookings({ commit, state }) {
+      api.get("/bookings/customer/" + state.user.id).then((res) => {
+        if (res.status === 200) {
+          res.data.map((booking) => {
+            let payload = {
+              id: booking.id,
+              room_id: booking.room_id,
+              customer_id: booking.customer_id,
+              checkinDate: booking.checkinDate,
+              checkoutDate: booking.checkoutDate,
+            };
+            commit("addBooking", payload);
+          });
         }
       });
     },
@@ -192,6 +217,42 @@ export default new Vuex.Store({
             commit("setAvailable", res.data);
           }
         });
+    },
+    register({ commit }, user) {
+      return new Promise((resolve) => {
+        api
+          .post("/user/register", {
+            email: user.email,
+            password: user.password,
+            firstname: user.firstName,
+            lastname: user.lastName,
+          })
+          .then((res) => {
+            if (res.status === 201) {
+              commit("setUser", res.data);
+              commit("login");
+              resolve(true);
+            }
+          });
+      });
+    },
+    login({ commit }, user) {
+      return new Promise((resolve, reject) => {
+        api
+          .post("user/login", {
+            email: user.email,
+            password: user.password,
+          })
+          .then((res) => {
+            if (res.status === 200) {
+              commit("setUser", res.data);
+              commit("login");
+              resolve(true);
+            } else {
+              reject(false);
+            }
+          });
+      });
     },
     reset({ state }) {
       state.loggedIn = false;

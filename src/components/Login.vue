@@ -2,7 +2,7 @@
   <v-container>
     <v-row class="text-center">
       <v-col cols="6">
-        <v-card>
+        <v-card flat>
           <v-card-title>Login</v-card-title>
           <v-col cols="10">
             <v-row>
@@ -43,8 +43,14 @@ export default {
         this.username === this.defaultUserName &&
         this.password === this.defaultPassword
       ) {
-        this.$store.commit("login");
+        this.$store.commit("admin");
         this.$router.push("/bookings");
+      } else {
+        this.$store.dispatch("login").then((res) => {
+          if (res) {
+            this.$router.push("/bookings");
+          }
+        });
       }
     },
   },
